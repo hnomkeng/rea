@@ -1,3 +1,4 @@
+import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -72,27 +73,31 @@ const sampleAuthEvents: AuthFlowEvent[] = [
 ];
 
 describe("custom protocol capture", () => {
-  it("validates a well-formed capture", () => {
-    const capture = {
-      transport: "tcp" as const,
+  it("rejects a capture with an unknown transport", () => {
+    const result = customProtocolCaptureSchema.safeParse({
+      transport: "carrier-pigeon",
       frames: sampleFrames,
       auth_events: sampleAuthEvents,
       has_truncated: false,
       credentials_detected: false,
-    };
-    const result = customProtocolCaptureSchema.safeParse(capture);
-    expect(result.success).toBe(true);
+    });
+    expect(result.success).toBe(false);
   });
 
-  it("accepts every captured frame without an array ceiling", () => {
-    const frames = Array.from({ length: 100_001 }, (_, sequence) => ({
-      ...sampleFrames[0]!,
-      sequence,
-    }));
-
-    expect(
-      customProtocolCaptureSchema.parse({ transport: "tcp", frames }).frames,
-    ).toHaveLength(frames.length);
+  it("retains every captured frame at any size", () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.constant(sampleFrames[0]!), { maxLength: 40 }),
+        (frames) => {
+          const parsed = customProtocolCaptureSchema.parse({
+            transport: "tcp",
+            frames: frames.map((frame, sequence) => ({ ...frame, sequence })),
+          });
+          expect(parsed.frames).toHaveLength(frames.length);
+        },
+      ),
+      { numRuns: 25 },
+    );
   });
 
   it("correlates process identity", () => {

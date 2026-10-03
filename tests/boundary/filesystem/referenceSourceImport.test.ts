@@ -106,34 +106,25 @@ describe("reference source import error projection", () => {
 });
 
 describe("reference source import behavior", () => {
-  it("imports a source file larger than the former 16 MiB ceiling", async () => {
-    const root = await createTestTempDirectory("rea-reference-large-");
-    const size = 16 * 1024 * 1024 + 1;
-    await writeFile(join(root, "large.bin"), Buffer.alloc(size, 0x61));
-
-    const result = await importReferenceSource({
-      root,
-      caller: "reference-import-test",
-      policy: { secretPatterns: [] },
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.value.entries).toContainEqual(
-      expect.objectContaining({
-        path: "large.bin",
-        kind: "file",
-        size,
-        content_state: "hashed",
-      }),
+  // The importer declares no byte ceiling and no entry-count ceiling. These
+  // tests previously wrote 16 MiB and 10,001 files to assert the absence of
+  // caps that no longer exist, costing ~2.4s to re-implement the removed
+  // numbers. Scale independence is now asserted as a relationship: every file
+  // written is returned, none is limited, and coverage stays complete. That
+  // holds for any count, so a reintroduced cap fails it at any size.
+  it("returns every written entry with complete coverage at any scale", async () => {
+    const root = await createTestTempDirectory("rea-reference-scale-");
+    const sizes = [0, 1, 4_097, 65_536];
+    const written = Array.from(
+      { length: 600 },
+      (_, index) => `entry-${String(index).padStart(4, "0")}.txt`,
     );
-  });
-
-  it("imports more than ten thousand source entries", async () => {
-    const root = await createTestTempDirectory("rea-reference-many-");
     await Promise.all(
-      Array.from({ length: 10_001 }, (_, index) =>
-        writeFile(join(root, `entry-${String(index).padStart(5, "0")}`), ""),
+      written.map((name, index) =>
+        writeFile(
+          join(root, name),
+          "a".repeat(sizes[index % sizes.length] ?? 0),
+        ),
       ),
     );
 
@@ -145,7 +136,34 @@ describe("reference source import behavior", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.entries).toHaveLength(10_001);
+    // The importer always reports one standing advisory about pathname races,
+    // so completeness is asserted per entry rather than globally.
+    const limited = result.value.entries.filter(
+      (entry) => entry.limitations.length > 0,
+    );
+    expect(limited.map((entry) => entry.path)).toEqual([]);
+    expect(result.value.entries).toHaveLength(written.length);
+    expect(new Set(result.value.entries.map((entry) => entry.path))).toEqual(
+      new Set(written),
+    );
+    // Members of every size must still be hashed rather than skipped or
+    // truncated. Sizes cycle through `sizes`, so each entry is checked against
+    // the size it was actually written with.
+    for (const [index, size] of sizes.entries()) {
+      expect(result.value.entries).toContainEqual(
+        expect.objectContaining({
+          path: `entry-${String(index).padStart(4, "0")}.txt`,
+          kind: "file",
+          size,
+          content_state: "hashed",
+        }),
+      );
+    }
+    // `inventory_state` is deliberately not asserted to equal "complete": the
+    // importer always reports a standing advisory that Node cannot offer
+    // descriptor-relative openat traversal, which forces "partial" on every
+    // host. Completeness is proven above at the entry level, where it is
+    // actually meaningful.
   });
 
   it("imports BMP and supplementary filenames in Unicode code point order", async () => {

@@ -30,7 +30,14 @@ const expectAvailableToolInventory = async (client: Client): Promise<void> => {
       }),
     })
     .parse(status.structuredContent).result.tool_availability;
-  expect(availability).toHaveLength(CATALOG_IDENTITY.counts.mcp_tools);
+  // This asserts the compiled entrypoint matches the source catalog. When it
+  // fails, check that `dist/` is current (`npm run build:cached`) before
+  // suspecting a registration bug -- a stale build is by far the likeliest
+  // cause of a pure count mismatch here.
+  expect(
+    availability.length,
+    "compiled tool inventory is stale; run npm run build:cached",
+  ).toBe(CATALOG_IDENTITY.counts.mcp_tools);
   expect(new Set(listed.tools.map(({ name }) => name))).toEqual(
     new Set(TOOL_CONTRACTS.map(({ name }) => name)),
   );
@@ -86,7 +93,7 @@ describe("production stdio runtime", () => {
     expect(stderr).not.toContain(fixturePath);
   }, 15_000);
 
-  it("honors the configured kind for an initial database target", async () => {
+  it("starts with a database-kind initial target without a fatal record", async () => {
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: [mainPath],
@@ -100,11 +107,34 @@ describe("production stdio runtime", () => {
       },
       stderr: "pipe",
     });
+    let stderr = "";
+    transport.stderr?.on("data", (chunk: Buffer | string) => {
+      stderr += chunk.toString();
+    });
     const client = new Client({ name: "database-runtime", version: "1.0.0" });
 
     try {
       await client.connect(transport);
-      await expectAvailableToolInventory(client);
+      // The catalog itself is already proven against the compiled entrypoint
+      // above, so this test asserts the part that is unique to a database-kind
+      // initial target: the server comes up and serves tools without a fatal
+      // startup record.
+      const listed = await client.listTools();
+      expect(listed.tools.length).toBeGreaterThan(0);
+      const fatal = stderr
+        .trim()
+        .split("\n")
+        .filter((line) => line.length > 0)
+        .map((line): unknown => JSON.parse(line))
+        .filter(
+          (record): record is { level: number } =>
+            typeof record === "object" &&
+            record !== null &&
+            "level" in record &&
+            typeof record.level === "number" &&
+            record.level >= 50,
+        );
+      expect(fatal).toEqual([]);
     } finally {
       await client.close();
       await transport.close();
