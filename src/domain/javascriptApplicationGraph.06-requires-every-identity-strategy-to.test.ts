@@ -1,75 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createJavaScriptApplicationGraph,
-  createJavaScriptApplicationNode,
-  type ApplicationGraphEvidence,
-  type ApplicationNode,
-  type JavaScriptApplicationGraph,
-} from "./javascriptApplicationGraph.js";
+import { createJavaScriptApplicationNode } from "./javascriptApplicationGraph.js";
 import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
-  completeCoverage,
+  contentNode,
+  graphForNode,
   inferredArtifactEvidence,
   runtimeEvidence,
+  unknownEvidence,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const unknownEvidence = (
-  limitations: string[] = ["The extractor could not classify this fact."],
-): ApplicationGraphEvidence => ({
-  authority: "unknown",
-  state: "unknown",
-  confidence: "unknown",
-  artifact: {
-    available: false,
-    reason: "unknown",
-    detail: "Artifact provenance is unknown.",
-  },
-  location: {
-    available: false,
-    reason: "unknown",
-    detail: "Source location is unknown.",
-  },
-  extractor: {
-    name: "test",
-    version: "1",
-    operation: "unknown",
-    executable_sha256: null,
-  },
-  coverage: {
-    status: "unknown",
-    truncated: false,
-    omitted_count: null,
-    limits: [],
-  },
-  limitations,
-  evidence_ids: [],
-});
-
-const graphForNode = (node: ApplicationNode): JavaScriptApplicationGraph =>
-  createJavaScriptApplicationGraph({
-    schema: "JavaScriptApplicationGraph",
-    root_node_ids: [node.node_id],
-    nodes: [node],
-    edges: [],
-    coverage: completeCoverage,
-    limitations: [],
-  });
-
-const contentNode = (
-  evidence: ApplicationGraphEvidence,
-  properties: Record<string, unknown> = {},
-): ApplicationNode =>
-  createJavaScriptApplicationNode({
-    kind: "javascript-module",
-    identity: {
-      strategy: "content-digest",
-      stability: "global-exact",
-      sha256: APPLICATION_GRAPH_DIGESTS.asar,
-    },
-    observations: [{ label: "module", properties, evidence }],
-  });
 
 describe("JavaScript Application Graph", () => {
   it("requires every identity strategy to have compatible supporting evidence", () => {

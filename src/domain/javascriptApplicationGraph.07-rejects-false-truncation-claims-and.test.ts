@@ -1,29 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createJavaScriptApplicationGraph,
-  createJavaScriptApplicationNode,
-  type ApplicationGraphEvidence,
-  type ApplicationNode,
-} from "./javascriptApplicationGraph.js";
+import { createJavaScriptApplicationGraph } from "./javascriptApplicationGraph.js";
 import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
+  contentNode,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const contentNode = (
-  evidence: ApplicationGraphEvidence,
-  properties: Record<string, unknown> = {},
-): ApplicationNode =>
-  createJavaScriptApplicationNode({
-    kind: "javascript-module",
-    identity: {
-      strategy: "content-digest",
-      stability: "global-exact",
-      sha256: APPLICATION_GRAPH_DIGESTS.asar,
-    },
-    observations: [{ label: "module", properties, evidence }],
-  });
 
 describe("JavaScript Application Graph", () => {
   it("rejects false truncation claims and accepts large properties", () => {

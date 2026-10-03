@@ -1,30 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createJavaScriptApplicationGraph,
-  createJavaScriptApplicationNode,
-  type ApplicationNode,
-  type JavaScriptApplicationGraph,
-} from "./javascriptApplicationGraph.js";
+import { createJavaScriptApplicationNode } from "./javascriptApplicationGraph.js";
 import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
   buildSyntheticJavaScriptApplicationGraph,
-  completeCoverage,
+  graphForNode,
   inferredArtifactEvidence,
   nodeByLabel,
   runtimeEvidence,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const graphForNode = (node: ApplicationNode): JavaScriptApplicationGraph =>
-  createJavaScriptApplicationGraph({
-    schema: "JavaScriptApplicationGraph",
-    root_node_ids: [node.node_id],
-    nodes: [node],
-    edges: [],
-    coverage: completeCoverage,
-    limitations: [],
-  });
 
 describe("JavaScript Application Graph", () => {
   it("normalizes structural identity and evidence set ordering", () => {

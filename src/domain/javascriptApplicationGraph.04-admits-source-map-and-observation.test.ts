@@ -1,29 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  createJavaScriptApplicationGraph,
   createJavaScriptApplicationNode,
   parseJavaScriptApplicationGraph,
-  type ApplicationNode,
-  type JavaScriptApplicationGraph,
 } from "./javascriptApplicationGraph.js";
 import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
   buildSyntheticJavaScriptApplicationGraph,
-  completeCoverage,
   firstOf,
+  graphForNode,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const graphForNode = (node: ApplicationNode): JavaScriptApplicationGraph =>
-  createJavaScriptApplicationGraph({
-    schema: "JavaScriptApplicationGraph",
-    root_node_ids: [node.node_id],
-    nodes: [node],
-    edges: [],
-    coverage: completeCoverage,
-    limitations: [],
-  });
 
 describe("JavaScript Application Graph", () => {
   it("admits source-map and observation-scoped identities only with supporting observations", () => {
