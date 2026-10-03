@@ -1,55 +1,18 @@
 import { isInputRequiredResult } from "@modelcontextprotocol/server";
-import { realpathSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { PermissionAuthority } from "../../../src/application/PermissionAuthority.js";
-import { createPermissionPolicy } from "../../../src/domain/permissionPolicy.js";
 import {
   authorizeProcessCaptureWithElicitation,
   type ProcessCaptureElicitationState,
 } from "../../../src/server/ProcessCaptureElicitation.js";
-const request = {
-  capability: "process_capture" as const,
-  roots: [realpathSync("/tmp")],
-  executables: [process.execPath],
-  environment_names: ["PATH"],
-  network: "external" as const,
-  mount: false,
-  operation_identity: "capture:test",
-};
-const now = Date.parse("2026-07-18T00:00:00.000Z");
-const ceilingOnlyAuthority = (
-  origins?: readonly string[],
-): PermissionAuthority =>
-  new PermissionAuthority(
-    createPermissionPolicy([
-      {
-        capability: "process_capture",
-        roots: request.roots,
-        executables: request.executables,
-        environment_names: request.environment_names,
-        ...(origins === undefined ? {} : { origins }),
-        network: request.network,
-        mount: request.mount,
-      },
-    ]),
-  );
-const requestContext = (
-  state?: ProcessCaptureElicitationState,
-  response?: Record<string, unknown>,
-) => ({
-  mcpReq: {
-    requestState: () => state,
-    ...(response === undefined
-      ? {}
-      : { inputResponses: { process_capture_grant: response } }),
-  },
-});
-const verifiedState = (
-  state: ProcessCaptureElicitationState | undefined,
-): Promise<ProcessCaptureElicitationState> => {
-  if (state === undefined) throw new Error("state was not minted");
-  return Promise.resolve(state);
-};
+
+import {
+  request,
+  now,
+  ceilingOnlyAuthority,
+  requestContext,
+  verifiedState,
+} from "./elicitationGrantsHarness.js";
+
 describe("process-capture MCP elicitation grants", () => {
   it("binds signed continuation state to exact origins", async () => {
     const authority = ceilingOnlyAuthority([
