@@ -7,7 +7,6 @@ import {
   javascriptApplicationGraphSchema,
   parseJavaScriptApplicationGraph,
   serializeJavaScriptApplicationGraph,
-  type ApplicationNode,
   type JavaScriptApplicationGraph,
 } from "./javascriptApplicationGraph.js";
 import {
@@ -18,18 +17,8 @@ import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
   buildSyntheticJavaScriptApplicationGraph,
+  nodeByLabel,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const nodeByLabel = (
-  graph: JavaScriptApplicationGraph,
-  label: string,
-): ApplicationNode => {
-  const node = graph.nodes.find(({ observations }) =>
-    observations.some((observation) => observation.label === label),
-  );
-  if (node === undefined) throw new TypeError(`Missing fixture node: ${label}`);
-  return node;
-};
 
 const createLargeNativeExportGraph = (): JavaScriptApplicationGraph => {
   const properties = Object.fromEntries(

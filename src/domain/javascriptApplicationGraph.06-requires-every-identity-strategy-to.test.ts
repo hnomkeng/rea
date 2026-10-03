@@ -10,16 +10,10 @@ import {
 import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
+  completeCoverage,
   inferredArtifactEvidence,
   runtimeEvidence,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const completeCoverage = {
-  status: "complete" as const,
-  truncated: false,
-  omitted_count: 0,
-  limits: [],
-};
 
 const unknownEvidence = (
   limitations: string[] = ["The extractor could not classify this fact."],

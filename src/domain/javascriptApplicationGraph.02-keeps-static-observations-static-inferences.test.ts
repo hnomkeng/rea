@@ -11,14 +11,9 @@ import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
   buildSyntheticJavaScriptApplicationGraph,
+  completeCoverage,
+  nodeByLabel,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const completeCoverage = {
-  status: "complete" as const,
-  truncated: false,
-  omitted_count: 0,
-  limits: [],
-};
 
 const unknownEvidence = (
   limitations: string[] = ["The extractor could not classify this fact."],
@@ -51,17 +46,6 @@ const unknownEvidence = (
   limitations,
   evidence_ids: [],
 });
-
-const nodeByLabel = (
-  graph: JavaScriptApplicationGraph,
-  label: string,
-): ApplicationNode => {
-  const node = graph.nodes.find(({ observations }) =>
-    observations.some((observation) => observation.label === label),
-  );
-  if (node === undefined) throw new TypeError(`Missing fixture node: ${label}`);
-  return node;
-};
 
 const graphForNode = (node: ApplicationNode): JavaScriptApplicationGraph =>
   createJavaScriptApplicationGraph({

@@ -11,20 +11,9 @@ import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
   buildSyntheticJavaScriptApplicationGraph,
+  completeCoverage,
+  firstOf,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const completeCoverage = {
-  status: "complete" as const,
-  truncated: false,
-  omitted_count: 0,
-  limits: [],
-};
-
-const firstOf = <Value>(values: readonly Value[], label: string): Value => {
-  const value = values[0];
-  if (value === undefined) throw new TypeError(`Missing fixture ${label}`);
-  return value;
-};
 
 const graphForNode = (node: ApplicationNode): JavaScriptApplicationGraph =>
   createJavaScriptApplicationGraph({

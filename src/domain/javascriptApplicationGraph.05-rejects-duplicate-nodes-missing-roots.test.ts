@@ -4,39 +4,16 @@ import {
   createJavaScriptApplicationEdge,
   createJavaScriptApplicationGraph,
   createJavaScriptApplicationNode,
-  type ApplicationNode,
-  type JavaScriptApplicationGraph,
 } from "./javascriptApplicationGraph.js";
 import {
   APPLICATION_GRAPH_DIGESTS,
   artifactEvidence,
   buildSyntheticJavaScriptApplicationGraph,
+  completeCoverage,
+  firstOf,
   inferredArtifactEvidence,
+  nodeByLabel,
 } from "./javascriptApplicationGraph.fixture.js";
-
-const completeCoverage = {
-  status: "complete" as const,
-  truncated: false,
-  omitted_count: 0,
-  limits: [],
-};
-
-const nodeByLabel = (
-  graph: JavaScriptApplicationGraph,
-  label: string,
-): ApplicationNode => {
-  const node = graph.nodes.find(({ observations }) =>
-    observations.some((observation) => observation.label === label),
-  );
-  if (node === undefined) throw new TypeError(`Missing fixture node: ${label}`);
-  return node;
-};
-
-const firstOf = <Value>(values: readonly Value[], label: string): Value => {
-  const value = values[0];
-  if (value === undefined) throw new TypeError(`Missing fixture ${label}`);
-  return value;
-};
 
 describe("JavaScript Application Graph", () => {
   it("rejects duplicate nodes, missing roots, dangling edges, and self edges", () => {

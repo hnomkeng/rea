@@ -3,6 +3,7 @@ import {
   createJavaScriptApplicationGraph,
   createJavaScriptApplicationNode,
   type ApplicationGraphEvidence,
+  type ApplicationNode,
   type JavaScriptApplicationGraph,
 } from "./javascriptApplicationGraph.js";
 
@@ -13,7 +14,8 @@ export const APPLICATION_GRAPH_DIGESTS = {
   capture: "4".repeat(64),
 } as const;
 
-const completeCoverage = {
+/** Coverage block asserting nothing was truncated or omitted. */
+export const completeCoverage = {
   status: "complete",
   truncated: false,
   omitted_count: 0,
@@ -399,3 +401,25 @@ export const buildSyntheticJavaScriptApplicationGraph =
       ],
     });
   };
+
+/** Find the fixture node carrying an observation with the given label. */
+export const nodeByLabel = (
+  graph: JavaScriptApplicationGraph,
+  label: string,
+): ApplicationNode => {
+  const node = graph.nodes.find(({ observations }) =>
+    observations.some((observation) => observation.label === label),
+  );
+  if (node === undefined) throw new TypeError(`Missing fixture node: ${label}`);
+  return node;
+};
+
+/** Return the first value, failing loudly when a fixture is empty. */
+export const firstOf = <Value>(
+  values: readonly Value[],
+  label: string,
+): Value => {
+  const value = values[0];
+  if (value === undefined) throw new TypeError(`Missing fixture ${label}`);
+  return value;
+};
