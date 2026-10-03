@@ -129,6 +129,28 @@ interface StartCaptureRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 
+/**
+ * Wait until the capture journal stops growing.
+ *
+ * node-pty reports buffered output through `onData` callbacks rather than an
+ * awaitable read, so after the child exits there can still be chunks in flight
+ * that have not yet been journalled. Yielding to the event loop until the
+ * journal length holds steady lets those land before the caller decides the
+ * target is gone. The bound keeps a pathological stream from stalling exit.
+ */
+const settleTrailingJournal = async (
+  journal: readonly ProcessCaptureEventJournalEntry[],
+  maxTicks = 64,
+): Promise<void> => {
+  for (let tick = 0; tick < maxTicks; tick += 1) {
+    const before = journal.length;
+    await new Promise<void>((resolve) => {
+      setImmediate(resolve);
+    });
+    if (journal.length === before) return;
+  }
+};
+
 const reactiveCapture = (
   options: StartCaptureRuntimeOptions,
   protocolEvents: () => LoopbackReplay["events"],
@@ -356,6 +378,14 @@ const completeCapture = async (options: {
     // during settlement after the PTY exits. Make target loss terminal only
     // after that journal has drained, otherwise the coordinator's control
     // priority discards a valid multi-source completion predicate.
+    //
+    // Draining the coordinator is not sufficient on its own: node-pty delivers
+    // buffered output through onData callbacks, which run outside the
+    // coordinator's queue. A trailing chunk that has not been delivered yet has
+    // produced no journal entry, so the drain has nothing to wait for and the
+    // target is declared lost while a terminal trigger is still satisfiable.
+    // Let any trailing chunks land first.
+    await settleTrailingJournal(options.eventJournal);
     await runtime.reactive.coordinator.drain();
     await runtime.reactive.coordinator.submit({ kind: "target_lost" });
     runtime.reactive.unsubscribe();
