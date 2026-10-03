@@ -1,6 +1,7 @@
 import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import { afterEach, describe, expect, it } from "vitest";
+import { PROCEDURES, inventory } from "./enhancedToolsHarness.js";
 
 import type { AnalysisOperationPort } from "../../../src/application/AnalysisProvider.js";
 import { MANAGED_WORKFLOW_TOOL_CONTRACTS } from "../../../src/contracts/managedWorkflowToolContracts.js";
@@ -17,18 +18,6 @@ import { createServer } from "../../../src/server/createServer.js";
 import { observed as ok } from "../../fixtures/analysisExecution.js";
 import { createAnalysisExecution } from "../../../src/application/AnalysisProvider.js";
 import { ok as resultOk } from "../../../src/domain/result.js";
-
-const PROCEDURES = {
-  "0x1": "_TtC7Fixture5Class",
-  "0x2": "_TtV7Fixture6Struct",
-  "0x3": "_TtP7Fixture8Protocol",
-  "0x4": "_TtO7Fixture4Enum",
-  "0x5": "_TtE7Fixture9Extension",
-  "0x6": "prefix_TtOther",
-};
-
-const inventory = (values: Readonly<Record<string, string>>) =>
-  Object.entries(values).map(([address, value]) => ({ address, value }));
 
 const targetObservation = (value: unknown) =>
   resultOk(
